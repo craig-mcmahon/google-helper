@@ -1,0 +1,20 @@
+{
+  "name": "p13eater/GoogleHelper",
+  "description": "Google API Helper Functions",
+  "type": "library",
+  "license": "MIT",
+  "minimum-stability": "stable",
+  "authors": [
+    {
+      "name": "Craig McMahon",
+      "email": "craig@nositehere.net"
+    }
+  ],
+  "require": {
+    "php": ">=5.4.0",
+    "google/apiclient": "1.0.*@beta"
+  },
+  "autoload": {
+    "psr-0": {"GoogleHelper": "../src/GoogleHelper/"}
+  }
+}
