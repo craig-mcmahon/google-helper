@@ -15,6 +15,6 @@
     "google/apiclient": "1.0.*@beta"
   },
   "autoload": {
-    "psr-0": {"GoogleHelper": "../src/GoogleHelper/"}
+    "psr-4": {"GoogleHelper\\": "src/GoogleHelper"}
   }
 }
