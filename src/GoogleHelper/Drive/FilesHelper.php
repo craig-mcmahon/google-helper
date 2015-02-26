@@ -98,9 +98,10 @@ class FilesHelper extends DriveHelper
      * @param string $str_file_name
      * @param string $str_file_location
      * @param \Google_Service_Drive_DriveFile $obj_folder
+     * @param string $str_upload_type
      * @return \Google_Service_Drive_DriveFile
      */
-    public function uploadFile($str_file_name, $str_file_location, \Google_Service_Drive_DriveFile $obj_folder = null)
+    public function uploadFile($str_file_name, $str_file_location, \Google_Service_Drive_DriveFile $obj_folder = null, $str_upload_type = 'media')
     {
         //Insert a file
         $obj_file = new \Google_Service_Drive_DriveFile();
@@ -118,7 +119,8 @@ class FilesHelper extends DriveHelper
 
         return $this->service->files->insert($obj_file, array(
            'data'     => $str_data,
-           'mimeType' => $obj_file->getMimeType()
+           'mimeType' => $obj_file->getMimeType(),
+           'uploadType' => $str_upload_type,
         ));
     }
 
