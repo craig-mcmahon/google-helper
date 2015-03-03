@@ -50,7 +50,6 @@ class GoogleHelper implements LoggerAwareInterface
                 return;
             }
             $this->getLogger()->info('Existing accessToken no longer valid');
-            $this->getLogger()->debug(print_r($this->accessToken));
         }
         switch($type) {
             case self::AUTH_TYPE_CMD_LINE:
