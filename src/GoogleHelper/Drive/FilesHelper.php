@@ -7,34 +7,35 @@ class FilesHelper extends DriveHelper
 
     /**
      * Get a file
-     * @param $str_folder_name
-     * @param $str_mime_type
-     * @param bool $bol_include_trash
-     * @param \Google_Service_Drive_DriveFile $obj_parent
-     * @param bool $bol_create_if_not_found
+     * @param $folderName
+     * @param $mimeType
+     * @param bool $includeTrash
+     * @param \Google_Service_Drive_DriveFile $parent
+     * @param bool $createIfNotFound
      * @return \Google_Service_Drive_DriveFile|null
      */
     public function getFileByName(
-       $str_folder_name,
-       $str_mime_type,
-       $bol_include_trash = false,
-       \Google_Service_Drive_DriveFile $obj_parent = null,
-       $bol_create_if_not_found = false
+       $folderName,
+       $mimeType,
+       $includeTrash = false,
+       \Google_Service_Drive_DriveFile $parent = null,
+       $createIfNotFound = false
     ) {
-        $str_query = 'title = \'' . $str_folder_name . '\' and mimeType = \'' . $str_mime_type . '\'';
-        if (!$bol_include_trash) {
-            $str_query .= ' and trashed = false';
+        $query = 'title = \'' . $folderName . '\' and mimeType = \'' . $mimeType . '\'';
+        if (!$includeTrash) {
+            $query .= ' and trashed = false';
         }
-        if ($obj_parent !== null) {
-            $str_query .= ' and \'' . $obj_parent->getId() . '\' in parents';
+        if ($parent !== null) {
+            $query .= ' and \'' . $parent->getId() . '\' in parents';
         }
-        $obj_file_list = $this->service->files->listFiles(array('q' => $str_query));
-        $arr_folders   = $obj_file_list->getItems();
-        if (isset($arr_folders[0])) {
-            return $arr_folders[0];
+        $fileList = $this->service->files->listFiles(array('q' => $query));
+        $folders   = $fileList->getItems();
+        if (isset($folders[0])) {
+            return $folders[0];
         }
-        if ($bol_create_if_not_found) {
-            return $this->createFolder($str_folder_name, $obj_parent);
+        if ($createIfNotFound) {
+            $this->helper->getLogger()->debug('Creating Folder ' . $folderName);
+            return $this->createFolder($folderName, $parent);
         }
 
         return null;
@@ -42,97 +43,101 @@ class FilesHelper extends DriveHelper
 
     /**
      * Get folder
-     * @param $str_folder_name
-     * @param bool $bol_include_trash
-     * @param \Google_Service_Drive_DriveFile $obj_parent
-     * @param bool $bol_create_if_not_found
+     * @param $folderName
+     * @param bool $includeTrash
+     * @param \Google_Service_Drive_DriveFile $parent
+     * @param bool $createIfNotFound
      * @return \Google_Service_Drive_DriveFile|null
      */
     public function getFolderByName(
-       $str_folder_name,
-       $bol_include_trash = false,
-       \Google_Service_Drive_DriveFile $obj_parent = null,
-       $bol_create_if_not_found = false
+       $folderName,
+       $includeTrash = false,
+       \Google_Service_Drive_DriveFile $parent = null,
+       $createIfNotFound = false
     ) {
-        return $this->getFileByName($str_folder_name, self::MIME_FOLDER, $bol_include_trash, $obj_parent,
-           $bol_create_if_not_found);
+        return $this->getFileByName($folderName, self::MIME_FOLDER, $includeTrash, $parent,
+           $createIfNotFound);
     }
 
     /**
      * Create a file
-     * @param $str_file_name
-     * @param $str_mime_type
-     * @param \Google_Service_Drive_DriveFile $obj_parent_folder
+     * @param $fileName
+     * @param $mimeType
+     * @param \Google_Service_Drive_DriveFile $parentFolder
      * @return \Google_Service_Drive_DriveFile
      */
     public function createFile(
-       $str_file_name,
-       $str_mime_type,
-       \Google_Service_Drive_DriveFile $obj_parent_folder = null
+       $fileName,
+       $mimeType,
+       \Google_Service_Drive_DriveFile $parentFolder = null
     ) {
-        $obj_folder = new \Google_Service_Drive_DriveFile();
-        $obj_folder->setTitle($str_file_name);
-        $obj_folder->setMimeType($str_mime_type);
-        if ($obj_parent_folder !== null) {
-            $obj_parent = new \Google_Service_Drive_ParentReference();
-            $obj_parent->setId($obj_parent_folder->getId());
-            $obj_folder->setParents(array($obj_parent));
+        $folder = new \Google_Service_Drive_DriveFile();
+        $folder->setTitle($fileName);
+        $folder->setMimeType($mimeType);
+        if ($parentFolder !== null) {
+            $parent = new \Google_Service_Drive_ParentReference();
+            $parent->setId($parentFolder->getId());
+            $folder->setParents(array($parent));
         }
 
-        return $this->service->files->insert($obj_folder);
+        return $this->service->files->insert($folder);
     }
 
     /**
      * Create a folder
-     * @param $str_folder_name
-     * @param \Google_Service_Drive_DriveFile $obj_parent_folder
+     * @param $folderName
+     * @param \Google_Service_Drive_DriveFile $parentFolder
      * @return \Google_Service_Drive_DriveFile
      */
-    public function createFolder($str_folder_name, \Google_Service_Drive_DriveFile $obj_parent_folder = null)
+    public function createFolder($folderName, \Google_Service_Drive_DriveFile $parentFolder = null)
     {
-        return $this->createFile($str_folder_name, self::MIME_FOLDER, $obj_parent_folder);
+        return $this->createFile($folderName, self::MIME_FOLDER, $parentFolder);
     }
 
     /**
      * Upload a file
-     * @param string $str_file_name
-     * @param string $str_file_location
-     * @param \Google_Service_Drive_DriveFile $obj_folder
-     * @param string $str_upload_type
+     * @param string $fileName
+     * @param string $fileLocation
+     * @param \Google_Service_Drive_DriveFile $folder
+     * @param string $uploadType
      * @return \Google_Service_Drive_DriveFile
      */
-    public function uploadFile($str_file_name, $str_file_location, \Google_Service_Drive_DriveFile $obj_folder = null, $str_upload_type = 'media')
+    public function uploadFile($fileName, $fileLocation, \Google_Service_Drive_DriveFile $folder = null, $uploadType = 'media')
     {
         //Insert a file
-        $obj_file = new \Google_Service_Drive_DriveFile();
-        $obj_file->setTitle($str_file_name);
-        $obj_file_info = new \finfo(FILEINFO_MIME_TYPE);
-        $str_mime_type = $obj_file_info->file($str_file_location);
-        $obj_file->setDescription($str_file_name);
-        $obj_file->setMimeType($str_mime_type);
-        if ($obj_folder !== null) {
-            $obj_parent = new \Google_Service_Drive_ParentReference();
-            $obj_parent->setId($obj_folder->getId());
-            $obj_file->setParents(array($obj_parent));
+        $file = new \Google_Service_Drive_DriveFile();
+        $file->setTitle($fileName);
+        $fileInfo = new \finfo(FILEINFO_MIME_TYPE);
+        $mimeType = $fileInfo->file($fileLocation);
+        $file->setDescription($fileName);
+        $file->setMimeType($mimeType);
+        if ($folder !== null) {
+            $parent = new \Google_Service_Drive_ParentReference();
+            $parent->setId($folder->getId());
+            $file->setParents(array($parent));
         }
-        $str_data = file_get_contents($str_file_location);
-
-        return $this->service->files->insert($obj_file, array(
-           'data'     => $str_data,
-           'mimeType' => $obj_file->getMimeType(),
-           'uploadType' => $str_upload_type,
-        ));
+        $data = file_get_contents($fileLocation);
+        try {
+            return $this->service->files->insert($file, array(
+               'data'       => $data,
+               'mimeType'   => $file->getMimeType(),
+               'uploadType' => $uploadType,
+            ));
+        } catch (\Google_Service_Exception $obj_ex) {
+            $this->service->getClient()->getLogger()->error($obj_ex->getMessage());
+            return false;
+        }
     }
 
 
     /**
      * Download a file from a url
-     * @param $str_url
+     * @param $url
      * @return string|null
      */
-    public function downloadFileFromURL($str_url)
+    public function downloadFileFromURL($url)
     {
-        $request     = new \Google_Http_Request($str_url, 'GET', null, null);
+        $request     = new \Google_Http_Request($url, 'GET', null, null);
         $httpRequest = $this->service->getClient()
            ->getAuth()
            ->authenticatedRequest($request);
@@ -146,16 +151,16 @@ class FilesHelper extends DriveHelper
 
     /**
      * Get Files in a folder
-     * @param \Google_Service_Drive_DriveFile $obj_folder
+     * @param \Google_Service_Drive_DriveFile $folder
      * @return \Google_Service_Drive_FileList
      */
-    public function getFilesInFolder(\Google_Service_Drive_DriveFile $obj_folder)
+    public function getFilesInFolder(\Google_Service_Drive_DriveFile $folder)
     {
-        $str_query = 'trashed = false and \'' . $obj_folder->getId() . '\' in parents';
+        $query = 'trashed = false and \'' . $folder->getId() . '\' in parents';
 
-        $obj_file_list = $this->service->files->listFiles(array('q' => $str_query));
+        $fileList = $this->service->files->listFiles(array('q' => $query));
 
-        return $obj_file_list;
+        return $fileList;
 
     }
 }
