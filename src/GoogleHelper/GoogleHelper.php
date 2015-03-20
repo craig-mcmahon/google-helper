@@ -13,6 +13,8 @@ class GoogleHelper implements LoggerAwareInterface
     const AUTH_TYPE_CMD_LINE = 1;
     /** @var String */
     protected $accessToken = null;
+    /** @var String|null */
+    protected $refreshToken = null;
     /** @var \Google_Client */
     protected $client;
     /** @var LoggerInterface */
@@ -29,7 +31,12 @@ class GoogleHelper implements LoggerAwareInterface
         // Get your credentials from the APIs Console
         $client->setClientId($clientId);
         $client->setClientSecret($clientSecret);
-        $client->setApprovalPrompt('auto');
+        // Apparently you need to force to get refresh token
+        if ($accessType === 'offline') {
+            $client->setApprovalPrompt('force');
+        } else {
+            $client->setApprovalPrompt('auto');
+        }
         $client->setAccessType($accessType);
         $client->setRedirectUri('urn:ietf:wg:oauth:2.0:oob');
         $this->client = $client;
@@ -41,7 +48,8 @@ class GoogleHelper implements LoggerAwareInterface
      * @param int $type
      * @throws Exception
      */
-    public function auth($type = self::AUTH_TYPE_CMD_LINE) {
+    public function auth($type = self::AUTH_TYPE_CMD_LINE)
+    {
         if ($this->accessToken !== null) {
             // Already got an auth token
             $this->getLogger()->debug('Using existing accessToken');
@@ -50,6 +58,11 @@ class GoogleHelper implements LoggerAwareInterface
                 return;
             }
             $this->getLogger()->info('Existing accessToken no longer valid');
+            if ($this->refreshToken !== null) {
+                $this->getLogger()->debug('Using refreshToken');
+                $this->client->refreshToken($this->refreshToken);
+                return;
+            }
         }
         switch($type) {
             case self::AUTH_TYPE_CMD_LINE:
@@ -76,6 +89,7 @@ class GoogleHelper implements LoggerAwareInterface
 
         $this->client->setAccessToken($accessToken);
         $this->accessToken = $accessToken;
+        $this->refreshToken = $this->client->getRefreshToken();
     }
 
     /**
@@ -91,7 +105,8 @@ class GoogleHelper implements LoggerAwareInterface
      * Gets a logger
      * @return LoggerInterface
      */
-    public function getLogger() {
+    public function getLogger()
+    {
         if ($this->logger === null) {
             $this->logger = new NullLogger();
         }
@@ -125,5 +140,23 @@ class GoogleHelper implements LoggerAwareInterface
     public function getAccessToken()
     {
         return $this->accessToken;
+    }
+
+    /**
+     * Get Refresh Token
+     * @return null|String
+     */
+    public function getRefreshToken()
+    {
+        return $this->refreshToken;
+    }
+
+    /**
+     * Set Refresh Token
+     * @param $token
+     */
+    public function setRefreshToken($token)
+    {
+        $this->refreshToken = $token;
     }
 }
