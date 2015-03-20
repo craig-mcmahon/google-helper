@@ -1,6 +1,8 @@
 {
   "name": "p13eater/google-helper",
-  "description": "Google API Helper Functions",
+  "description": "Google API Wrapper Functions",
+  "keywords": ["Google", "API", "Wrapper"],
+  "homepage": "https://github.com/p13eater/google-helper",
   "type": "library",
   "license": "MIT",
   "minimum-stability": "stable",
